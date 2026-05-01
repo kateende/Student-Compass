@@ -6,18 +6,22 @@ import {
   sessionsTable,
   mentorsTable,
 } from "@workspace/db";
-import { eq, gte, sql, desc } from "drizzle-orm";
+import { eq, gte, sql, desc, and } from "drizzle-orm";
+import { requireAuth, type AuthenticatedRequest } from "../middlewares/requireAuth";
 
 const router = Router();
 
-router.get("/dashboard/summary", async (_req, res) => {
+router.get("/dashboard/summary", requireAuth, async (req, res) => {
+  const userId = (req as AuthenticatedRequest).userId;
+
   const [logStats] = await db
     .select({
       totalLogs: sql<number>`count(${energyLogsTable.id})::int`,
       avgEnergyOverall:
         sql<number | null>`avg(${energyLogsTable.energyLevel})::float`,
     })
-    .from(energyLogsTable);
+    .from(energyLogsTable)
+    .where(eq(energyLogsTable.userId, userId));
 
   const categoryStats = await db
     .select({
@@ -29,7 +33,10 @@ router.get("/dashboard/summary", async (_req, res) => {
     .from(categoriesTable)
     .leftJoin(
       energyLogsTable,
-      eq(energyLogsTable.categoryId, categoriesTable.id)
+      and(
+        eq(energyLogsTable.categoryId, categoriesTable.id),
+        eq(energyLogsTable.userId, userId)
+      )
     )
     .groupBy(categoriesTable.id);
 
@@ -49,7 +56,7 @@ router.get("/dashboard/summary", async (_req, res) => {
       upcomingSessions: sql<number>`count(${sessionsTable.id})::int`,
     })
     .from(sessionsTable)
-    .where(gte(sessionsTable.scheduledAt, now));
+    .where(and(eq(sessionsTable.userId, userId), gte(sessionsTable.scheduledAt, now)));
 
   const [mentorStats] = await db
     .select({
@@ -64,7 +71,7 @@ router.get("/dashboard/summary", async (_req, res) => {
       recentLogs: sql<number>`count(${energyLogsTable.id})::int`,
     })
     .from(energyLogsTable)
-    .where(gte(energyLogsTable.loggedAt, sevenDaysAgo));
+    .where(and(eq(energyLogsTable.userId, userId), gte(energyLogsTable.loggedAt, sevenDaysAgo)));
 
   return res.json({
     totalLogs: logStats?.totalLogs ?? 0,
@@ -79,7 +86,9 @@ router.get("/dashboard/summary", async (_req, res) => {
   });
 });
 
-router.get("/dashboard/energy-by-category", async (_req, res) => {
+router.get("/dashboard/energy-by-category", requireAuth, async (req, res) => {
+  const userId = (req as AuthenticatedRequest).userId;
+
   const rows = await db
     .select({
       categoryId: categoriesTable.id,
@@ -90,7 +99,10 @@ router.get("/dashboard/energy-by-category", async (_req, res) => {
     .from(categoriesTable)
     .leftJoin(
       energyLogsTable,
-      eq(energyLogsTable.categoryId, categoriesTable.id)
+      and(
+        eq(energyLogsTable.categoryId, categoriesTable.id),
+        eq(energyLogsTable.userId, userId)
+      )
     )
     .groupBy(categoriesTable.id)
     .orderBy(categoriesTable.name);
@@ -107,7 +119,9 @@ router.get("/dashboard/energy-by-category", async (_req, res) => {
   return res.json(result);
 });
 
-router.get("/dashboard/recent-activity", async (_req, res) => {
+router.get("/dashboard/recent-activity", requireAuth, async (req, res) => {
+  const userId = (req as AuthenticatedRequest).userId;
+
   const logs = await db
     .select({
       id: energyLogsTable.id,
@@ -124,6 +138,7 @@ router.get("/dashboard/recent-activity", async (_req, res) => {
       categoriesTable,
       eq(energyLogsTable.categoryId, categoriesTable.id)
     )
+    .where(eq(energyLogsTable.userId, userId))
     .orderBy(desc(energyLogsTable.loggedAt))
     .limit(10);
 

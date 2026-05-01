@@ -11,6 +11,7 @@ import { categoriesTable } from "./categories";
 
 export const energyLogsTable = pgTable("energy_logs", {
   id: serial("id").primaryKey(),
+  userId: text("user_id"),
   taskName: text("task_name").notNull(),
   energyLevel: integer("energy_level").notNull(),
   categoryId: integer("category_id").references(() => categoriesTable.id, {

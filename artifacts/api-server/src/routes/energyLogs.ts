@@ -4,7 +4,7 @@ import {
   energyLogsTable,
   categoriesTable,
 } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import {
   GetEnergyLogsQueryParams,
   CreateEnergyLogBody,
@@ -13,15 +13,20 @@ import {
   UpdateEnergyLogBody,
   DeleteEnergyLogParams,
 } from "@workspace/api-zod";
+import { requireAuth, type AuthenticatedRequest } from "../middlewares/requireAuth";
 
 const router = Router();
 
-router.get("/energy-logs", async (req, res) => {
+router.get("/energy-logs", requireAuth, async (req, res) => {
+  const userId = (req as AuthenticatedRequest).userId;
   const query = GetEnergyLogsQueryParams.safeParse(req.query);
   if (!query.success) {
     return res.status(400).json({ error: "Invalid query params" });
   }
   const { categoryId, limit } = query.data;
+
+  const conditions = [eq(energyLogsTable.userId, userId)];
+  if (categoryId) conditions.push(eq(energyLogsTable.categoryId, categoryId));
 
   const logs = await db
     .select({
@@ -39,14 +44,15 @@ router.get("/energy-logs", async (req, res) => {
       categoriesTable,
       eq(energyLogsTable.categoryId, categoriesTable.id)
     )
-    .where(categoryId ? eq(energyLogsTable.categoryId, categoryId) : undefined)
+    .where(and(...conditions))
     .orderBy(desc(energyLogsTable.loggedAt))
     .limit(limit ?? 50);
 
   return res.json(logs);
 });
 
-router.post("/energy-logs", async (req, res) => {
+router.post("/energy-logs", requireAuth, async (req, res) => {
+  const userId = (req as AuthenticatedRequest).userId;
   const body = CreateEnergyLogBody.safeParse(req.body);
   if (!body.success) {
     return res.status(400).json({ error: "Invalid body" });
@@ -57,6 +63,7 @@ router.post("/energy-logs", async (req, res) => {
   const [log] = await db
     .insert(energyLogsTable)
     .values({
+      userId,
       taskName,
       energyLevel,
       categoryId: categoryId ?? null,
@@ -78,7 +85,8 @@ router.post("/energy-logs", async (req, res) => {
   return res.status(201).json({ ...log, categoryName });
 });
 
-router.get("/energy-logs/:id", async (req, res) => {
+router.get("/energy-logs/:id", requireAuth, async (req, res) => {
+  const userId = (req as AuthenticatedRequest).userId;
   const params = GetEnergyLogParams.safeParse(req.params);
   if (!params.success) {
     return res.status(400).json({ error: "Invalid params" });
@@ -100,14 +108,15 @@ router.get("/energy-logs/:id", async (req, res) => {
       categoriesTable,
       eq(energyLogsTable.categoryId, categoriesTable.id)
     )
-    .where(eq(energyLogsTable.id, params.data.id))
+    .where(and(eq(energyLogsTable.id, params.data.id), eq(energyLogsTable.userId, userId)))
     .limit(1);
 
   if (!log) return res.status(404).json({ error: "Not found" });
   return res.json(log);
 });
 
-router.put("/energy-logs/:id", async (req, res) => {
+router.put("/energy-logs/:id", requireAuth, async (req, res) => {
+  const userId = (req as AuthenticatedRequest).userId;
   const params = UpdateEnergyLogParams.safeParse(req.params);
   const body = UpdateEnergyLogBody.safeParse(req.body);
   if (!params.success || !body.success) {
@@ -124,7 +133,7 @@ router.put("/energy-logs/:id", async (req, res) => {
   const [updated] = await db
     .update(energyLogsTable)
     .set(updates)
-    .where(eq(energyLogsTable.id, params.data.id))
+    .where(and(eq(energyLogsTable.id, params.data.id), eq(energyLogsTable.userId, userId)))
     .returning();
 
   if (!updated) return res.status(404).json({ error: "Not found" });
@@ -142,7 +151,8 @@ router.put("/energy-logs/:id", async (req, res) => {
   return res.json({ ...updated, categoryName });
 });
 
-router.delete("/energy-logs/:id", async (req, res) => {
+router.delete("/energy-logs/:id", requireAuth, async (req, res) => {
+  const userId = (req as AuthenticatedRequest).userId;
   const params = DeleteEnergyLogParams.safeParse(req.params);
   if (!params.success) {
     return res.status(400).json({ error: "Invalid params" });
@@ -150,7 +160,7 @@ router.delete("/energy-logs/:id", async (req, res) => {
 
   await db
     .delete(energyLogsTable)
-    .where(eq(energyLogsTable.id, params.data.id));
+    .where(and(eq(energyLogsTable.id, params.data.id), eq(energyLogsTable.userId, userId)));
 
   return res.status(204).send();
 });

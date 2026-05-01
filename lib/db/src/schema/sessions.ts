@@ -11,6 +11,7 @@ import { mentorsTable } from "./mentors";
 
 export const sessionsTable = pgTable("sessions", {
   id: serial("id").primaryKey(),
+  userId: text("user_id"),
   mentorId: integer("mentor_id")
     .references(() => mentorsTable.id, { onDelete: "cascade" })
     .notNull(),

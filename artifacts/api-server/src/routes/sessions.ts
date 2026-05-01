@@ -1,13 +1,14 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { sessionsTable, mentorsTable } from "@workspace/db";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc, sql, and } from "drizzle-orm";
 import {
   CreateSessionBody,
   GetSessionParams,
   UpdateSessionParams,
   UpdateSessionBody,
 } from "@workspace/api-zod";
+import { requireAuth, type AuthenticatedRequest } from "../middlewares/requireAuth";
 
 const router = Router();
 
@@ -26,7 +27,9 @@ const withMentor = async (session: typeof sessionsTable.$inferSelect) => {
   };
 };
 
-router.get("/sessions", async (_req, res) => {
+router.get("/sessions", requireAuth, async (req, res) => {
+  const userId = (req as AuthenticatedRequest).userId;
+
   const sessions = await db
     .select({
       id: sessionsTable.id,
@@ -42,12 +45,14 @@ router.get("/sessions", async (_req, res) => {
     })
     .from(sessionsTable)
     .leftJoin(mentorsTable, eq(sessionsTable.mentorId, mentorsTable.id))
+    .where(eq(sessionsTable.userId, userId))
     .orderBy(desc(sessionsTable.scheduledAt));
 
   return res.json(sessions);
 });
 
-router.post("/sessions", async (req, res) => {
+router.post("/sessions", requireAuth, async (req, res) => {
+  const userId = (req as AuthenticatedRequest).userId;
   const body = CreateSessionBody.safeParse(req.body);
   if (!body.success) {
     return res.status(400).json({ error: "Invalid body" });
@@ -58,6 +63,7 @@ router.post("/sessions", async (req, res) => {
   const [session] = await db
     .insert(sessionsTable)
     .values({
+      userId,
       mentorId,
       topic,
       notes: notes ?? null,
@@ -74,7 +80,8 @@ router.post("/sessions", async (req, res) => {
   return res.status(201).json(enriched);
 });
 
-router.get("/sessions/:id", async (req, res) => {
+router.get("/sessions/:id", requireAuth, async (req, res) => {
+  const userId = (req as AuthenticatedRequest).userId;
   const params = GetSessionParams.safeParse(req.params);
   if (!params.success) {
     return res.status(400).json({ error: "Invalid params" });
@@ -95,14 +102,15 @@ router.get("/sessions/:id", async (req, res) => {
     })
     .from(sessionsTable)
     .leftJoin(mentorsTable, eq(sessionsTable.mentorId, mentorsTable.id))
-    .where(eq(sessionsTable.id, params.data.id))
+    .where(and(eq(sessionsTable.id, params.data.id), eq(sessionsTable.userId, userId)))
     .limit(1);
 
   if (!session) return res.status(404).json({ error: "Not found" });
   return res.json(session);
 });
 
-router.put("/sessions/:id", async (req, res) => {
+router.put("/sessions/:id", requireAuth, async (req, res) => {
+  const userId = (req as AuthenticatedRequest).userId;
   const params = UpdateSessionParams.safeParse(req.params);
   const body = UpdateSessionBody.safeParse(req.body);
   if (!params.success || !body.success) {
@@ -119,7 +127,7 @@ router.put("/sessions/:id", async (req, res) => {
   const [updated] = await db
     .update(sessionsTable)
     .set(updates)
-    .where(eq(sessionsTable.id, params.data.id))
+    .where(and(eq(sessionsTable.id, params.data.id), eq(sessionsTable.userId, userId)))
     .returning();
 
   if (!updated) return res.status(404).json({ error: "Not found" });
