@@ -3,20 +3,31 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Compass - Student Lifecycle Platform API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: energy-logs
+    description: Energy tracking logs
+  - name: categories
+    description: Subject categories for energy logging
+  - name: mentors
+    description: Near-peer mentors
+  - name: sessions
+    description: Mentoring sessions
+  - name: major-recommendations
+    description: AI-driven major recommendations
+  - name: dashboard
+    description: Dashboard summaries and analytics
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +35,366 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /energy-logs:
+    get:
+      operationId: getEnergyLogs
+      tags: [energy-logs]
+      summary: Get all energy logs
+      parameters:
+        - name: categoryId
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: List of energy logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EnergyLog"
+    post:
+      operationId: createEnergyLog
+      tags: [energy-logs]
+      summary: Create energy log
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEnergyLogBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnergyLog"
+
+  /energy-logs/{id}:
+    get:
+      operationId: getEnergyLog
+      tags: [energy-logs]
+      summary: Get energy log by id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Energy log
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnergyLog"
+    put:
+      operationId: updateEnergyLog
+      tags: [energy-logs]
+      summary: Update energy log
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateEnergyLogBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnergyLog"
+    delete:
+      operationId: deleteEnergyLog
+      tags: [energy-logs]
+      summary: Delete energy log
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /categories:
+    get:
+      operationId: getCategories
+      tags: [categories]
+      summary: Get all categories
+      responses:
+        "200":
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+    post:
+      operationId: createCategory
+      tags: [categories]
+      summary: Create category
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCategoryBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+
+  /categories/{id}:
+    put:
+      operationId: updateCategory
+      tags: [categories]
+      summary: Update category
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCategoryBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+    delete:
+      operationId: deleteCategory
+      tags: [categories]
+      summary: Delete category
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /mentors:
+    get:
+      operationId: getMentors
+      tags: [mentors]
+      summary: Get all mentors
+      parameters:
+        - name: major
+          in: query
+          schema:
+            type: string
+        - name: year
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of mentors
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Mentor"
+    post:
+      operationId: createMentor
+      tags: [mentors]
+      summary: Create mentor profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMentorBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Mentor"
+
+  /mentors/{id}:
+    get:
+      operationId: getMentor
+      tags: [mentors]
+      summary: Get mentor by id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Mentor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Mentor"
+
+  /sessions:
+    get:
+      operationId: getSessions
+      tags: [sessions]
+      summary: Get all sessions
+      responses:
+        "200":
+          description: List of sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Session"
+    post:
+      operationId: createSession
+      tags: [sessions]
+      summary: Book a session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSessionBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+
+  /sessions/{id}:
+    get:
+      operationId: getSession
+      tags: [sessions]
+      summary: Get session by id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+    put:
+      operationId: updateSession
+      tags: [sessions]
+      summary: Update session
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSessionBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+
+  /major-recommendations:
+    get:
+      operationId: getMajorRecommendations
+      tags: [major-recommendations]
+      summary: Get AI-generated major recommendations
+      responses:
+        "200":
+          description: Major recommendations based on energy logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MajorRecommendation"
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary stats
+      responses:
+        "200":
+          description: Summary stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/energy-by-category:
+    get:
+      operationId: getEnergyByCategory
+      tags: [dashboard]
+      summary: Get average energy grouped by category
+      responses:
+        "200":
+          description: Energy by category
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EnergyByCategory"
+
+  /dashboard/recent-activity:
+    get:
+      operationId: getRecentActivity
+      tags: [dashboard]
+      summary: Get recent energy log activity
+      responses:
+        "200":
+          description: Recent logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EnergyLog"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +405,334 @@ components:
       required:
         - status
 
+    EnergyLog:
+      type: object
+      properties:
+        id:
+          type: integer
+        taskName:
+          type: string
+        energyLevel:
+          type: integer
+          minimum: 1
+          maximum: 10
+        categoryId:
+          type: integer
+          nullable: true
+        categoryName:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        loggedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - taskName
+        - energyLevel
+        - loggedAt
+        - createdAt
+
+    CreateEnergyLogBody:
+      type: object
+      properties:
+        taskName:
+          type: string
+        energyLevel:
+          type: integer
+          minimum: 1
+          maximum: 10
+        categoryId:
+          type: integer
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        loggedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - taskName
+        - energyLevel
+
+    UpdateEnergyLogBody:
+      type: object
+      properties:
+        taskName:
+          type: string
+        energyLevel:
+          type: integer
+          minimum: 1
+          maximum: 10
+        categoryId:
+          type: integer
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        logCount:
+          type: integer
+        avgEnergy:
+          type: number
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - logCount
+        - createdAt
+
+    CreateCategoryBody:
+      type: object
+      properties:
+        name:
+          type: string
+      required:
+        - name
+
+    UpdateCategoryBody:
+      type: object
+      properties:
+        name:
+          type: string
+      required:
+        - name
+
+    Mentor:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        major:
+          type: string
+        year:
+          type: string
+        bio:
+          type: string
+        avatarUrl:
+          type: string
+          nullable: true
+        strengths:
+          type: array
+          items:
+            type: string
+        rating:
+          type: number
+          nullable: true
+        sessionCount:
+          type: integer
+        isAvailable:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - major
+        - year
+        - bio
+        - strengths
+        - sessionCount
+        - isAvailable
+        - createdAt
+
+    CreateMentorBody:
+      type: object
+      properties:
+        name:
+          type: string
+        major:
+          type: string
+        year:
+          type: string
+        bio:
+          type: string
+        avatarUrl:
+          type: string
+          nullable: true
+        strengths:
+          type: array
+          items:
+            type: string
+        isAvailable:
+          type: boolean
+      required:
+        - name
+        - major
+        - year
+        - bio
+        - strengths
+
+    Session:
+      type: object
+      properties:
+        id:
+          type: integer
+        mentorId:
+          type: integer
+        mentorName:
+          type: string
+        mentorMajor:
+          type: string
+        mentorAvatarUrl:
+          type: string
+          nullable: true
+        topic:
+          type: string
+        notes:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [scheduled, completed, cancelled]
+        scheduledAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - mentorId
+        - mentorName
+        - mentorMajor
+        - topic
+        - status
+        - scheduledAt
+        - createdAt
+
+    CreateSessionBody:
+      type: object
+      properties:
+        mentorId:
+          type: integer
+        topic:
+          type: string
+        notes:
+          type: string
+          nullable: true
+        scheduledAt:
+          type: string
+          format: date-time
+      required:
+        - mentorId
+        - topic
+        - scheduledAt
+
+    UpdateSessionBody:
+      type: object
+      properties:
+        topic:
+          type: string
+        notes:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [scheduled, completed, cancelled]
+        scheduledAt:
+          type: string
+          format: date-time
+
+    MajorRecommendation:
+      type: object
+      properties:
+        id:
+          type: integer
+        majorName:
+          type: string
+        matchScore:
+          type: number
+        reasoning:
+          type: string
+        topCategories:
+          type: array
+          items:
+            type: string
+        careerPaths:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - majorName
+        - matchScore
+        - reasoning
+        - topCategories
+        - careerPaths
+        - createdAt
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalLogs:
+          type: integer
+        avgEnergyOverall:
+          type: number
+          nullable: true
+        topCategory:
+          type: string
+          nullable: true
+        topCategoryAvgEnergy:
+          type: number
+          nullable: true
+        burnoutRiskCategories:
+          type: integer
+        thrivingCategories:
+          type: integer
+        upcomingSessions:
+          type: integer
+        totalMentors:
+          type: integer
+        streak:
+          type: integer
+      required:
+        - totalLogs
+        - burnoutRiskCategories
+        - thrivingCategories
+        - upcomingSessions
+        - totalMentors
+        - streak
+
+    EnergyByCategory:
+      type: object
+      properties:
+        categoryId:
+          type: integer
+        categoryName:
+          type: string
+        avgEnergy:
+          type: number
+        logCount:
+          type: integer
+        status:
+          type: string
+          enum: [thriving, okay, needs-attention]
+      required:
+        - categoryId
+        - categoryName
+        - avgEnergy
+        - logCount
+        - status
