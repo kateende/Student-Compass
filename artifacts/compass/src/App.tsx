@@ -106,6 +106,7 @@ function SignInPage() {
           path={`${basePath}/sign-in`}
           signUpUrl={`${basePath}/sign-up`}
           fallbackRedirectUrl={`${basePath}/dashboard`}
+          appearance={clerkAppearance}
         />
       </div>
     </div>
@@ -120,6 +121,7 @@ function SignUpPage() {
         path={`${basePath}/sign-up`}
         signInUrl={`${basePath}/sign-in`}
         fallbackRedirectUrl={`${basePath}/dashboard`}
+        appearance={clerkAppearance}
       />
     </div>
   );
