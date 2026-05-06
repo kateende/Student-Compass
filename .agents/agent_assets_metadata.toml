@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "PUvvwPFJbKHjR-Fr0QfRd"
+uri = "file://README.md"
+type = "text"
+title = "README — Compass"
