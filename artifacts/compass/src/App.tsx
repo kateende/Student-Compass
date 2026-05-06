@@ -25,6 +25,8 @@ const queryClient = new QueryClient();
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
+const demoEmail = import.meta.env.VITE_CLERK_USER_EMAIL;
+const demoPassword = import.meta.env.VITE_CLERK_USER_PASSWORD;
 
 const clerkPubKey = publishableKeyFromHost(
   window.location.hostname,
@@ -93,12 +95,19 @@ const clerkAppearance = {
 function SignInPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <SignIn
-        routing="path"
-        path={`${basePath}/sign-in`}
-        signUpUrl={`${basePath}/sign-up`}
-        fallbackRedirectUrl={`${basePath}/dashboard`}
-      />
+      <div className="w-full max-w-[440px] space-y-3">
+        {demoEmail && demoPassword && (
+          <div className="rounded-xl border border-border/60 bg-card px-4 py-3 text-sm text-muted-foreground">
+            Demo login: <span className="font-medium text-foreground">{demoEmail}</span> / <span className="font-medium text-foreground">{demoPassword}</span>
+          </div>
+        )}
+        <SignIn
+          routing="path"
+          path={`${basePath}/sign-in`}
+          signUpUrl={`${basePath}/sign-up`}
+          fallbackRedirectUrl={`${basePath}/dashboard`}
+        />
+      </div>
     </div>
   );
 }
